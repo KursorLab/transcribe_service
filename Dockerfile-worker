@@ -1,0 +1,26 @@
+# Dockerfile-worker
+FROM python:3.10-slim
+
+# 1) Install libmagic (for python-magic) and build tools
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      build-essential \
+      libmagic1 \
+      libmagic-dev \
+      python3-dev \
+   && rm -rf /var/lib/apt/lists/*
+
+# 2) Set workdir and install Python deps
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 3) Copy env and application code
+COPY .env ./
+COPY app/ ./app
+
+# 4) Ensure Python can import your app package
+ENV PYTHONPATH=/app
+
+# 5) Run Celery worker
+CMD ["celery", "-A", "app.tasks", "worker", "--loglevel=info"]

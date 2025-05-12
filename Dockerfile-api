@@ -1,0 +1,28 @@
+# Dockerfile-api
+FROM python:3.10-slim
+
+# 1) Install libmagic (for python-magic), YAML support, and build tools
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      build-essential \
+      libmagic1 \
+      libmagic-dev \
+      python3-dev \
+   && rm -rf /var/lib/apt/lists/*
+
+# 2) Set workdir and install Python deps
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 3) Copy config, env, and application code
+COPY logging.yaml ./
+COPY .env ./
+COPY app/ ./app
+
+# 4) Expose port and launch Uvicorn with your YAML logging config
+EXPOSE 8010
+CMD ["uvicorn", "app.main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8010", \
+     "--log-config", "logging.yaml"]
